@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MEA CS Ops</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg-primary:#ffffff;--bg-secondary:#f8fafc;--bg-tertiary:#f1f5f9;
+  --text-primary:#0f172a;--text-secondary:#64748b;--text-info:#185FA5;
+  --border-light:#e2e8f0;--border-mid:#cbd5e1;
+  --navy:#1C2E4A;--blue:#2563C0;--teal:#0F766E;--green:#166534;
+  --red:#991B1B;--amber:#92400E;--slate:#475569;
+  --radius-md:8px;--radius-lg:12px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg-secondary);color:var(--text-primary);font-size:13px}
+.app{display:flex;height:100vh}
+.sidebar{width:210px;flex-shrink:0;background:var(--bg-primary);border-right:1px solid var(--border-light);display:flex;flex-direction:column;padding:0}
+.logo{padding:16px;border-bottom:1px solid var(--border-light)}
+.logo-title{font-size:14px;font-weight:600;color:var(--navy)}
+.logo-sub{font-size:11px;color:var(--text-secondary);margin-top:2px}
+.logo-status{font-size:10px;margin-top:4px;display:flex;align-items:center;gap:4px}
+.status-dot{width:6px;height:6px;border-radius:50%;background:#3B6D11}
+.status-dot.syncing{background:#854F0B;animation:pulse 1s infinite}
+.status-dot.error{background:#A32D2D}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.nav-section{padding:8px 0;flex:1}
+.nav-item{display:flex;align-items:center;gap:8px;padding:9px 16px;font-size:13px;cursor:pointer;color:var(--text-secondary);border-left:2px solid transparent;transition:all 0.12s}
+.nav-item:hover{background:var(--bg-secondary);color:var(--text-primary)}
+.nav-item.active{background:#EFF6FF;color:#185FA5;border-left:2px solid #185FA5;font-weight:500}
+.nav-item i{font-size:16px;width:18px}
+.nav-bottom{padding:12px;border-top:1px solid var(--border-light);display:flex;flex-direction:column;gap:6px}
+.sync-section{padding:10px 12px;background:var(--bg-secondary);border-radius:var(--radius-md);margin-bottom:4px}
+.sync-url-row{display:flex;gap:6px;margin-top:6px}
+.sync-url-row input{flex:1;font-size:10px;padding:4px 6px}
+.main{flex:1;overflow:auto;display:flex;flex-direction:column;min-width:0}
+.topbar{background:var(--bg-primary);border-bottom:1px solid var(--border-light);padding:11px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar-title{font-size:15px;font-weight:600;color:var(--navy)}
+.topbar-right{display:flex;gap:8px;align-items:center}
+.btn{padding:6px 12px;font-size:12px;border:1px solid var(--border-mid);border-radius:var(--radius-md);cursor:pointer;background:var(--bg-primary);color:var(--text-primary);display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.btn:hover{background:var(--bg-secondary)}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+.btn-primary{background:#EFF6FF;color:#185FA5;border-color:#BFDBFE}
+.btn-primary:hover{background:#DBEAFE}
+.btn-sync{background:#E1F5EE;color:#0F6E56;border-color:#A7F3D0}
+.btn-sync:hover{background:#CCFBF1}
+.btn-sm{padding:3px 8px;font-size:11px}
+.btn-danger{color:#A32D2D;border-color:#FECACA}
+.btn-danger:hover{background:#FEF2F2}
+.content{flex:1;padding:20px;overflow:auto}
+.page{display:none}.page.active{display:block}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px}
+.metric-card{background:var(--bg-primary);border:1px solid var(--border-light);border-radius:var(--radius-md);padding:14px}
+.metric-val{font-size:22px;font-weight:600;margin-bottom:2px}
+.metric-lbl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em}
+.metric-sub{font-size:11px;color:var(--text-secondary);margin-top:3px}
+.card{background:var(--bg-primary);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:16px;margin-bottom:14px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.card-title{font-size:13px;font-weight:600;color:var(--navy)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:8px 10px;font-size:11px;font-weight:500;color:var(--text-secondary);border-bottom:1px solid var(--border-light);white-space:nowrap;background:var(--bg-secondary)}
+td{padding:8px 10px;border-bottom:1px solid var(--border-light);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg-secondary)}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap}
+.b-red{background:#FCEBEB;color:#A32D2D}
+.b-amber{background:#FAEEDA;color:#854F0B}
+.b-green{background:#EAF3DE;color:#3B6D11}
+.b-blue{background:#E6F1FB;color:#185FA5}
+.b-gray{background:#F1F5F9;color:#64748B}
+.b-purple{background:#EEEDFE;color:#534AB7}
+.b-teal{background:#E1F5EE;color:#0F6E56}
+.b-ksa{background:#E1F5EE;color:#0F6E56}
+.b-rome{background:#E6F1FB;color:#185FA5}
+.b-l4{background:#FCEBEB;color:#A32D2D}
+.b-l3{background:#EEEDFE;color:#534AB7}
+.b-l2{background:#FAEEDA;color:#854F0B}
+.b-l1{background:#E6F1FB;color:#185FA5}
+.b-l0{background:#EAF3DE;color:#3B6D11}
+.filter-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.filter-bar select,.filter-bar input[type=text]{padding:6px 10px;font-size:12px;border:1px solid var(--border-mid);border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-primary)}
+.pb{background:var(--bg-secondary);border-radius:4px;height:6px;overflow:hidden;display:inline-block;vertical-align:middle}
+.pb-fill{height:6px;border-radius:4px;background:#185FA5}
+.action-row{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-light)}
+.action-row:last-child{border-bottom:none}
+.sdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.sd-red{background:#A32D2D}.sd-amber{background:#854F0B}.sd-green{background:#3B6D11}.sd-gray{background:#94A3B8}
+input[type=text],input[type=number],input[type=date],select,textarea{padding:7px 10px;font-size:12px;border:1px solid var(--border-mid);border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-primary);width:100%}
+textarea{resize:vertical}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-group{margin-bottom:10px}
+.form-group label{font-size:11px;color:var(--text-secondary);display:block;margin-bottom:4px;font-weight:500}
+.cb-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.cb-item{display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:4px}
+.cb-item input{width:auto;margin:0}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:none;align-items:flex-start;justify-content:center;padding-top:40px;z-index:100;overflow-y:auto}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg-primary);border-radius:var(--radius-lg);border:1px solid var(--border-light);width:580px;max-height:82vh;overflow-y:auto;padding:22px;margin-bottom:40px;box-shadow:0 8px 32px rgba(0,0,0,0.12)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border-light)}
+.modal-title{font-size:14px;font-weight:600;color:var(--navy)}
+.close-btn{cursor:pointer;font-size:20px;color:var(--text-secondary);border:none;background:none;line-height:1;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:4px}
+.close-btn:hover{background:var(--bg-secondary)}
+.preview-box{background:var(--bg-secondary);border-radius:var(--radius-md);padding:10px;margin:10px 0;max-height:180px;overflow-y:auto}
+.upload-area{border:1.5px dashed var(--border-mid);border-radius:var(--radius-md);padding:24px;text-align:center;cursor:pointer;color:var(--text-secondary);transition:all 0.15s}
+.upload-area:hover{background:var(--bg-secondary);border-color:#185FA5}
+.fb{display:flex;flex-wrap:wrap;gap:3px;margin-top:3px}
+.toast{position:fixed;bottom:20px;right:20px;padding:10px 16px;border-radius:var(--radius-md);font-size:12px;font-weight:500;z-index:999;opacity:0;transition:opacity 0.25s;pointer-events:none;display:flex;align-items:center;gap:6px}
+.toast.show{opacity:1}
+.t-save{background:#166534;color:white}
+.t-sync{background:#0F6E56;color:white}
+.t-error{background:#991B1B;color:white}
+.t-purge{background:#854F0B;color:white}
+.divider{height:1px;background:var(--border-light);margin:12px 0}
+.info-box{padding:10px 12px;background:var(--bg-secondary);border-radius:var(--radius-md);font-size:11px;color:var(--text-secondary);margin-bottom:10px;display:flex;align-items:flex-start;gap:8px}
+.info-box i{flex-shrink:0;margin-top:1px}
+.loading-screen{position:fixed;inset:0;background:var(--bg-primary);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200;gap:14px}
+.loading-screen p{font-size:13px;color:var(--text-secondary)}
+.spinner{width:32px;height:32px;border:2px solid var(--border-light);border-top-color:#185FA5;border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sync-badge{font-size:10px;background:#E1F5EE;color:#0F6E56;padding:1px 6px;border-radius:10px;margin-left:6px}
+.sync-badge.error{background:#FCEBEB;color:#A32D2D}
+</style>
+</head>
+<body>
+
+<div class="loading-screen" id="loading-screen">
+  <div class="spinner"></div>
+  <p id="loading-msg">Opening database...</p>
+</div>
+
+<div class="app" id="app-root" style="display:none">
+<nav class="sidebar">
+  <div class="logo">
+    <div class="logo-title">CS Ops — MEA</div>
+    <div class="logo-sub">KSA &amp; ROME</div>
+    <div class="logo-status">
+      <div class="status-dot" id="sync-dot"></div>
+      <span id="sync-status-text" style="font-size:10px;color:var(--text-secondary)">Ready</span>
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-item active" onclick="nav('home',this)"><i class="ti ti-layout-dashboard"></i>Home</div>
+    <div class="nav-item" onclick="nav('accounts',this)"><i class="ti ti-building"></i>Accounts</div>
+    <div class="nav-item" onclick="nav('renewals',this)"><i class="ti ti-refresh"></i>Renewals</div>
+    <div class="nav-item" onclick="nav('escalations',this)"><i class="ti ti-alert-triangle"></i>Escalations</div>
+    <div class="nav-item" onclick="nav('exec',this)"><i class="ti ti-users"></i>Exec Engagement</div>
+    <div class="nav-item" onclick="nav('farming',this)"><i class="ti ti-plant"></i>Farming</div>
+    <div class="nav-item" onclick="nav('plan',this)"><i class="ti ti-checklist"></i>90-Day Plan</div>
+  </div>
+  <div class="nav-bottom">
+    <div class="sync-section">
+      <div style="font-size:11px;font-weight:500;color:var(--navy);margin-bottom:4px"><i class="ti ti-brand-google" style="font-size:13px;vertical-align:-2px"></i> Google Sheets Sync</div>
+      <div style="font-size:10px;color:var(--text-secondary);margin-bottom:6px">Paste your Apps Script URL</div>
+      <div class="sync-url-row">
+        <input type="text" id="sheet-url" placeholder="https://script.google.com/..." style="font-size:10px;padding:5px 7px">
+        <button class="btn btn-sm" onclick="saveSheetUrl()" style="white-space:nowrap;font-size:10px">Save</button>
+      </div>
+      <button class="btn btn-sync" style="width:100%;justify-content:center;margin-top:6px;font-size:11px" onclick="manualSync()">
+        <i class="ti ti-refresh"></i>Sync now
+      </button>
+    </div>
+    <button class="btn" style="width:100%;justify-content:center;font-size:11px" onclick="exportBackup()"><i class="ti ti-database-export"></i>Backup JSON</button>
+    <button class="btn" style="width:100%;justify-content:center;font-size:11px" onclick="document.getElementById('restore-input').click()"><i class="ti ti-database-import"></i>Restore JSON</button>
+    <input type="file" id="restore-input" accept=".json" style="display:none" onchange="restoreBackup(this)">
+    <div style="font-size:10px;color:var(--text-secondary);text-align:center" id="db-info">IndexedDB · loading...</div>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="page-title">Leadership Summary</div>
+    <div class="topbar-right">
+      <span id="last-sync-label" style="font-size:11px;color:var(--text-secondary)"></span>
+      <button class="btn btn-sync" onclick="manualSync()"><i class="ti ti-refresh"></i>Sync</button>
+      <button class="btn" onclick="exportPDF()"><i class="ti ti-file-export"></i>Export PDF</button>
+      <button class="btn btn-primary" onclick="openAddModal()"><i class="ti ti-plus"></i>Add Record</button>
+    </div>
+  </div>
+  <div class="content">
+    <div id="page-home" class="page active"></div>
+    <div id="page-accounts" class="page">
+      <div class="filter-bar">
+        <select id="acc-region" onchange="renderAccounts()"><option value="">All regions</option><option value="KSA">KSA</option><option value="ME">ROME</option></select>
+        <select id="acc-health" onchange="renderAccounts()"><option value="">All health</option><option value="Green">Green</option><option value="Amber">Amber</option><option value="Red">Red</option></select>
+        <select id="acc-csm" onchange="renderAccounts()"><option value="">All CSMs</option></select>
+        <input type="text" id="acc-search" placeholder="Search..." style="width:150px" oninput="renderAccounts()">
+      </div>
+      <div class="card"><div class="table-wrap"><table><thead><tr><th>Account</th><th>Region</th><th>CSM</th><th>ARR</th><th>Product</th><th>Status</th><th>Health</th><th>Renewal</th><th>Pulse</th><th></th></tr></thead><tbody id="acc-tbody"></tbody></table></div></div>
+    </div>
+    <div id="page-renewals" class="page">
+      <div class="filter-bar">
+        <select id="ren-region" onchange="renderRenewals()"><option value="">All regions</option><option value="KSA">KSA</option><option value="ME">ROME</option></select>
+        <select id="ren-status" onchange="renderRenewals()"><option value="">All status</option><option value="On Track">On Track</option><option value="At Risk">At Risk</option><option value="Churned">Churned</option></select>
+      </div>
+      <div class="metrics-grid" id="ren-metrics"></div>
+      <div class="card"><div class="table-wrap"><table><thead><tr><th>Account</th><th>Region</th><th>CSM</th><th>ARR</th><th>Renewal Date</th><th>Days Left</th><th>Status</th><th>Confidence</th><th>Notes</th><th></th></tr></thead><tbody id="ren-tbody"></tbody></table></div></div>
+    </div>
+    <div id="page-escalations" class="page">
+      <div class="filter-bar">
+        <select id="esc-region" onchange="renderEscalations()"><option value="">All regions</option><option value="KSA">KSA</option><option value="ME">ROME</option></select>
+        <select id="esc-level" onchange="renderEscalations()"><option value="">All levels</option><option value="L4">L4</option><option value="L3">L3</option><option value="L2">L2</option><option value="L1">L1</option><option value="L0">L0</option></select>
+        <select id="esc-type" onchange="renderEscalations()"><option value="">All types</option><option value="Support">Support</option><option value="Strategic">Strategic</option></select>
+        <button class="btn" onclick="openImportModal()"><i class="ti ti-upload"></i>Import report</button>
+        <button class="btn btn-danger" onclick="openCleanupModal()"><i class="ti ti-trash"></i>Clear old</button>
+      </div>
+      <div id="esc-info"></div>
+      <div class="card"><div class="table-wrap"><table><thead><tr><th>Account</th><th>Region</th><th>Type</th><th>Level</th><th>Root Cause</th><th>Owner</th><th>Opened</th><th>ETA</th><th>Status</th><th></th></tr></thead><tbody id="esc-tbody"></tbody></table></div></div>
+    </div>
+    <div id="page-exec" class="page">
+      <div class="metrics-grid" id="exec-metrics"></div>
+      <div class="card"><div class="table-wrap"><table><thead><tr><th>Account</th><th>Region</th><th>Our Exec Sponsor</th><th>Customer Exec</th><th>Last Contact</th><th>Days Since</th><th>Next Action</th><th>QBR</th><th></th></tr></thead><tbody id="exec-tbody"></tbody></table></div></div>
+    </div>
+    <div id="page-farming" class="page">
+      <div class="metrics-grid" id="farm-metrics"></div>
+      <div class="filter-bar">
+        <select id="farm-region" onchange="renderFarming()"><option value="">All regions</option><option value="KSA">KSA</option><option value="ME">ROME</option></select>
+        <select id="farm-csm" onchange="renderFarming()"><option value="">All CSMs</option></select>
+        <select id="farm-health" onchange="renderFarming()"><option value="">All health</option><option value="Green">Green</option><option value="Amber">Amber</option><option value="Red">Red</option></select>
+        <input type="text" id="farm-search" placeholder="Search..." style="width:150px" oninput="renderFarming()">
+      </div>
+      <div class="card"><div class="table-wrap"><table><thead><tr><th>Account</th><th>Region</th><th>CSM</th><th>ARR</th><th>Health</th><th>Farming Types</th><th>Deal Value</th><th>Quarter</th><th>Remarks</th><th></th></tr></thead><tbody id="farm-tbody"></tbody></table></div></div>
+    </div>
+    <div id="page-plan" class="page">
+      <div class="metrics-grid" id="plan-metrics"></div>
+      <div id="plan-phases"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">Record</span>
+      <button class="close-btn" onclick="closeModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<div class="toast t-save" id="t-save"><i class="ti ti-check"></i><span>Saved</span></div>
+<div class="toast t-sync" id="t-sync"><i class="ti ti-refresh"></i><span id="t-sync-msg">Synced to Google Sheets</span></div>
+<div class="toast t-error" id="t-error"><i class="ti ti-alert-circle"></i><span id="t-error-msg">Sync error</span></div>
+<div class="toast t-purge" id="t-purge"><i class="ti ti-trash"></i><span id="t-purge-msg">Purged old tickets</span></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// INDEXEDDB
+// ═══════════════════════════════════════════════════
+const DB_NAME='csops_mea_v4',DB_VER=1;
+let db=null;
+
+function openDB(){
+  return new Promise((res,rej)=>{
+    const r=indexedDB.open(DB_NAME,DB_VER);
+    r.onupgradeneeded=e=>{
+      const d=e.target.result;
+      ['accounts','escalations','exec_eng','plan90','settings'].forEach(s=>{
+        if(!d.objectStoreNames.contains(s))d.createObjectStore(s,{keyPath:'_k'});
+      });
+    };
+    r.onsuccess=e=>{db=e.target.result;res(db);};
+    r.onerror=e=>rej(e.target.error);
+  });
+}
+function idbPut(store,key,val){
+  return new Promise((res,rej)=>{
+    const tx=db.transaction(store,'readwrite');
+    tx.objectStore(store).put({_k:key,d:val,ts:Date.now()});
+    tx.oncomplete=()=>res();
+    tx.onerror=e=>rej(e.target.error);
+  });
+}
+function idbGet(store,key){
+  return new Promise((res,rej)=>{
+    const tx=db.transaction(store,'readonly');
+    const r=tx.objectStore(store).get(key);
+    r.onsuccess=e=>res(e.target.result?e.target.result.d:null);
+    r.onerror=e=>rej(e.target.error);
+  });
+}
+async function save(key,data){
+  const map={accounts:'accounts',escalations:'escalations',exec:'exec_eng',plan:'plan90'};
+  await idbPut(map[key]||key,key,data);
+  toast('save');
+  autoSyncToSheet();
+}
+async function load(key,fallback){
+  try{const map={accounts:'accounts',escalations:'escalations',exec:'exec_eng',plan:'plan90'};const v=await idbGet(map[key]||key,key);return v!==null?v:fallback;}catch(e){return fallback;}
+}
+
+// ═══════════════════════════════════════════════════
+// GOOGLE SHEETS SYNC ENGINE
+// ═══════════════════════════════════════════════════
+let SHEET_URL='';
+let syncTimer=null;
+let lastSyncTime=null;
+let syncPending=false;
+
+async function loadSheetUrl(){
+  const v=await idbGet('settings','sheet_url');
+  if(v){SHEET_URL=v;document.getElementById('sheet-url').value=v;}
+}
+async function saveSheetUrl(){
+  const url=document.getElementById('sheet-url').value.trim();
+  if(!url){alert('Please paste your Apps Script URL first.');return;}
+  SHEET_URL=url;
+  await idbPut('settings','sheet_url',url);
+  toast('sync','URL saved — testing connection...');
+  await manualSync();
+}
+
+function setSyncStatus(state,msg){
+  const dot=document.getElementById('sync-dot');
+  const txt=document.getElementById('sync-status-text');
+  const lbl=document.getElementById('last-sync-label');
+  dot.className='status-dot'+(state==='syncing'?' syncing':state==='error'?' error':'');
+  txt.textContent=msg||'Ready';
+  if(state==='ok'&&lastSyncTime){
+    lbl.textContent='Last sync: '+lastSyncTime.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  }
+}
+
+// Auto-sync with debounce — waits 3 seconds after last save then pushes
+function autoSyncToSheet(){
+  if(!SHEET_URL)return;
+  if(syncTimer)clearTimeout(syncTimer);
+  setSyncStatus('syncing','Queued...');
+  syncTimer=setTimeout(()=>pushToSheet(),3000);
+}
+
+async function pushToSheet(){
+  if(!SHEET_URL)return;
+  setSyncStatus('syncing','Syncing...');
+  try{
+    const payload={action:'push',data:{accounts:ACCOUNTS,escalations:ESCALATIONS,exec:EXEC,plan:PLAN}};
+    const r=await fetch(SHEET_URL,{method:'POST',body:JSON.stringify(payload)});
+    const json=await r.json();
+    if(json.status==='ok'){
+      lastSyncTime=new Date();
+      setSyncStatus('ok','Synced');
+      toast('sync','Pushed to Google Sheets');
+    } else {
+      throw new Error(json.message||'Push failed');
+    }
+  }catch(e){
+    setSyncStatus('error','Sync failed');
+    toast('error','Sync failed: '+e.message);
+  }
+}
+
+async function pullFromSheet(){
+  if(!SHEET_URL)return false;
+  setSyncStatus('syncing','Pulling from Sheet...');
+  try{
+    const r=await fetch(SHEET_URL+'?pull=1',{method:'GET'});
+    const json=await r.json();
+    if(json.status==='ok'&&json.data){
+      const d=json.data;
+      if(d.accounts&&d.accounts.length>0){ACCOUNTS=d.accounts;await idbPut('accounts','accounts',ACCOUNTS);}
+      if(d.escalations&&d.escalations.length>0){ESCALATIONS=d.escalations;await idbPut('escalations','escalations',ESCALATIONS);}
+      if(d.exec&&d.exec.length>0){EXEC=d.exec;await idbPut('exec_eng','exec',EXEC);}
+      if(d.plan&&d.plan.length>0){PLAN=d.plan;await idbPut('plan90','plan',PLAN);}
+      lastSyncTime=new Date();
+      setSyncStatus('ok','Synced');
+      toast('sync','Pulled from Google Sheets');
+      return true;
+    }
+    throw new Error(json.message||'Pull failed');
+  }catch(e){
+    setSyncStatus('error','Pull failed');
+    toast('error','Pull failed: '+e.message);
+    return false;
+  }
+}
+
+async function manualSync(){
+  if(!SHEET_URL){alert('Please paste your Apps Script URL in the sidebar first.');return;}
+  const pulled=await pullFromSheet();
+  if(pulled){
+    const page=document.querySelector('.page.active').id.replace('page-','');
+    renderPage(page);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════
+const fmt=v=>'$'+Math.round(parseFloat(v)||0).toLocaleString();
+const fmtK=v=>{const n=Math.round(parseFloat(v)||0);return n>=1000?'$'+(n/1000).toFixed(0)+'K':'$'+n;};
+const fmtD=d=>{if(!d)return'—';const dt=new Date(d);return isNaN(dt)?'—':dt.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});};
+const toISO=d=>{if(!d)return'';try{return new Date(d).toISOString().substring(0,10);}catch(e){return'';}};
+const dl=d=>{if(!d)return null;const dt=new Date(d);return isNaN(dt)?null:Math.round((dt-new Date())/86400000);};
+const exD=n=>{if(!n||isNaN(n))return null;return new Date((n-25569)*86400*1000).toISOString().substring(0,10);};
+const hB=h=>({Red:'b-red',Amber:'b-amber',Green:'b-green'}[h]||'b-gray');
+const eLC=l=>({L4:'b-l4',L3:'b-l3',L2:'b-l2',L1:'b-l1',L0:'b-l0'}[l]||'b-gray');
+const sSt=s=>({'In Progress':'b-blue','Not Started':'b-gray',Done:'b-green',Escalated:'b-red',Churned:'b-red',Resolved:'b-green',Blocked:'b-red'}[s]||'b-gray');
+const rB=r=>r==='KSA'?'<span class="badge b-ksa">KSA</span>':'<span class="badge b-rome">ROME</span>';
+const fBC=t=>({'PUPM Increase':'b-teal','Minimum Commitment Increase':'b-blue','Uuro':'b-purple','Sales Coach':'b-amber','LXP':'b-green','Adding Subsidiaries':'b-gray'}[t]||'b-gray');
+const FT=['PUPM Increase','Minimum Commitment Increase','Uuro','Sales Coach','LXP','Adding Subsidiaries'];
+const QS=['Q1 FY26','Q2 FY26','Q3 FY26','Q4 FY26','Q1 FY27','Q2 FY27'];
+const aH=a=>{if(a.status==='Churned')return'Red';if(a.pulse==='Severe Risk'||a.pulse==='Some Risk')return'Red';if(a.status==='Not Live'||a.status==='Partially Live')return'Amber';if(a.pulse==='Very Satisfied')return'Green';return'Amber';};
+
+function toast(type,msg){
+  const map={save:'t-save',sync:'t-sync',error:'t-error',purge:'t-purge'};
+  const el=document.getElementById(map[type]||'t-save');
+  if(msg){const span=el.querySelector('span');if(span)span.textContent=msg;}
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),type==='error'?4000:2500);
+}
+
+// ═══════════════════════════════════════════════════
+// SEED DATA
+// ═══════════════════════════════════════════════════
+const SEED_ACC=[
+  {name:"Palestine Telecom",region:"ME",csm:"Asik",arr:23000,product:"LXP Pro",status:"Live",pulse:"Some Risk",renewal:exD(46175),country:"Palestine"},
+  {name:"Invest Bank",region:"ME",csm:"Sreyas",arr:34020,product:"LMS Pro",status:"Live",pulse:"",renewal:exD(46068)},
+  {name:"Bank Nizwa",region:"ME",csm:"Shweta",arr:34944,product:"LMS Pro + LXP Pro",status:"Live",pulse:"",renewal:exD(46171)},
+  {name:"NLG Insurance",region:"ME",csm:"Asik",arr:59219,product:"LMS Pro + LXP Pro",status:"Live",pulse:"",renewal:exD(46266)},
+  {name:"Rivoli Group",region:"ME",csm:"Shweta",arr:27000,product:"LMS Pro",status:"Live",pulse:"",renewal:exD(46235)},
+  {name:"Sukoon Insurance",region:"ME",csm:"Shweta",arr:76743,product:"LMS Pro",status:"Live",pulse:"",renewal:exD(46113)},
+  {name:"DIFC",region:"ME",csm:"Shweta",arr:30860,product:"LMS Pro + LXP Pro",status:"Live",pulse:"",renewal:exD(46018)},
+  {name:"AL Masraf Bank",region:"ME",csm:"Shweta",arr:33880,product:"LMS Pro",status:"Live",pulse:"",renewal:exD(46174)},
+  {name:"Jumbo Electronics",region:"ME",csm:"Shweta",arr:34000,product:"LMS Pro",status:"Live",pulse:"",renewal:exD(45931)},
+  {name:"EIBFS",region:"ME",csm:"Tameem",arr:130000,product:"LMS Pro + LXP Pro",status:"Live",pulse:"",renewal:exD(45983)},
+  {name:"Almajdouie Motors",region:"KSA",csm:"Abdalla",arr:34222,product:"LMS Pro",status:"Churned",pulse:"Severe Risk",renewal:exD(45998)},
+  {name:"Al Shirawi",region:"ME",csm:"Sreyas",arr:32568,product:"LMS Pro + LXP Growth",status:"Live",pulse:"",renewal:exD(46309)},
+  {name:"Dept of Finance",region:"ME",csm:"Shweta",arr:58675,product:"LMS Pro + LXP Pro",status:"Live",pulse:"",renewal:exD(46327)},
+  {name:"SRMG",region:"KSA",csm:"Abdalla",arr:91000,product:"LMS Pro + LXP Growth",status:"Churned",pulse:"Severe Risk",renewal:exD(46026)},
+  {name:"Sharaf DG",region:"ME",csm:"Tameem",arr:58702,product:"LMS Pro",status:"Live",pulse:"Very Satisfied",renewal:exD(46112)},
+  {name:"Dubai Taxi",region:"ME",csm:"Asik",arr:34414,product:"LMS Pro",status:"Live",pulse:"",renewal:exD(46113)},
+  {name:"SRC",region:"KSA",csm:"Asik",arr:36000,product:"LMS Pro + LXP Pro",status:"Live",pulse:"",renewal:exD(46161)},
+  {name:"Damac",region:"ME",csm:"Shweta",arr:97500,product:"LMS Pro + LXP Pro",status:"Live",pulse:"",renewal:exD(46196)},
+  {name:"Roshn",region:"KSA",csm:"Abdalla",arr:265132,product:"LMS Pro + LXP Pro",status:"Live",pulse:"Very Satisfied",renewal:exD(46348)},
+  {name:"Nama Holdings",region:"ME",csm:"Shweta",arr:164938,product:"LMS Pro",status:"Churned",pulse:"Severe Risk",renewal:exD(46326)},
+  {name:"Etoile Group",region:"ME",csm:"Sreyas",arr:25340,product:"LMS Pro + LXP Pro",status:"Live",pulse:"",renewal:exD(46402)},
+  {name:"Seera - Al Mosafer",region:"KSA",csm:"Abdalla",arr:38254,product:"LMS Pro + LXP Pro",status:"Live",pulse:"Fairly Satisfied",renewal:exD(46270)},
+  {name:"Rotana",region:"ME",csm:"Shweta",arr:230000,product:"LMS Pro",status:"Live",pulse:"",renewal:exD(46507)},
+  {name:"Alfanar",region:"KSA",csm:"Abdalla",arr:13500,product:"LXP Essentials",status:"Live",pulse:"Fairly Satisfied",renewal:exD(46157)},
+  {name:"Neom",region:"KSA",csm:"Abdalla",arr:287544,product:"LMS Pro + LXP Pro",status:"Live",pulse:"Fairly Satisfied",renewal:exD(46290)},
+  {name:"Commercial Bank Dubai",region:"ME",csm:"Shweta",arr:106660,product:"LMS Pro + LXP Pro",status:"Live",pulse:"",renewal:exD(46354)},
+  {name:"Binzagr",region:"KSA",csm:"Abdalla",arr:45574,product:"HMM",status:"Live",pulse:"Very Satisfied",renewal:exD(46256)},
+  {name:"Khansaheb",region:"ME",csm:"Asik",arr:50400,product:"LMS Pro + LXP Pro",status:"Not Live",pulse:"",renewal:exD(45991)},
+  {name:"Bank Dhofar",region:"ME",csm:"Sreyas",arr:50660,product:"LMS Pro",status:"Live",pulse:"",renewal:exD(46199)},
+  {name:"Unicharm Saudi",region:"KSA",csm:"Abdalla",arr:20560,product:"LMS Pro",status:"Live",pulse:"Very Satisfied",renewal:exD(46295)},
+  {name:"CST LXP",region:"KSA",csm:"Abdalla",arr:38396,product:"LXP Essentials",status:"Partially Live",pulse:"",renewal:null},
+  {name:"Etihad Salam",region:"KSA",csm:"Abdalla",arr:56250,product:"LMS Pro",status:"Live",pulse:"Fairly Satisfied",renewal:exD(46172)},
+  {name:"CST-LMS",region:"KSA",csm:"Abdalla",arr:9000,product:"LMS Pro",status:"Live",pulse:"Very Satisfied",renewal:exD(46327)},
+  {name:"PWC",region:"ME",csm:"Shweta",arr:20000,product:"LMS Pro",status:"Live",pulse:"",renewal:exD(46142)},
+  {name:"Ali Zaid Al-Quraishi",region:"KSA",csm:"Abdalla",arr:55000,product:"LXP Essentials",status:"Implementation",pulse:"Fairly Satisfied",renewal:null},
+  {name:"ALEC Group",region:"ME",csm:"Shweta",arr:42900,product:"LMS Pro",status:"Live",pulse:"",renewal:exD(46204)},
+  {name:"Al Othaim Markets",region:"KSA",csm:"Abdalla",arr:30000,product:"HMM",status:"Not Live",pulse:"",renewal:null},
+  {name:"Nama Supply",region:"ME",csm:"Shweta",arr:25590,product:"LXP Essentials",status:"Implementation",pulse:"Fairly Satisfied",renewal:exD(46353)},
+  {name:"Jetex",region:"ME",csm:"Tameem",arr:18000,product:"LXP Essentials",status:"Implementation",pulse:"",renewal:null},
+  {name:"Savvy Games",region:"KSA",csm:"Abdalla",arr:77187,product:"LXP Essentials",status:"Live",pulse:"",renewal:null},
+  {name:"Al Gurg",region:"ME",csm:"Sreyas",arr:28210,product:"LMS Essentials",status:"Implementation",pulse:"",renewal:null},
+  {name:"Bank Muscat",region:"ME",csm:"Sreyas",arr:7500,product:"LMS Essentials",status:"Implementation",pulse:"",renewal:null},
+  {name:"Khazna",region:"ME",csm:"Sreyas",arr:0,product:"LXP Essentials",status:"Implementation",pulse:"",renewal:null},
+  {name:"Bahwan CyberTek",region:"ME",csm:"Tameem",arr:3214,product:"LMS Pro",status:"Not Live",pulse:"Very Satisfied",renewal:exD(45900)},
+].map(a=>({...a,health:aH(a),renewalStatus:a.status==='Churned'?'Churned':'On Track',confidence:70,execSponsor:'—',customerExec:'—',qbrDone:false,notes:'',farming:{types:[],dealValue:0,quarter:'',remarks:''}}));
+
+const SEED_ESC=[
+  {id:1,account:"Jumbo Electronics",region:"ME",type:"Strategic",level:"L2",rootCause:"Impl origin — expectation gaps",owner:"Shweta",opened:"2026-03-01",eta:"2026-06-30",status:"In Progress"},
+  {id:2,account:"Bank Nizwa",region:"ME",type:"Strategic",level:"L2",rootCause:"Impl origin — go-live transition",owner:"Shweta",opened:"2026-04-01",eta:"2026-06-30",status:"In Progress"},
+  {id:3,account:"Nama Holdings",region:"ME",type:"Strategic",level:"L3",rootCause:"Severe Risk — churn likely",owner:"Shweta",opened:"2026-02-01",eta:"2026-06-15",status:"Escalated"},
+  {id:4,account:"SRMG",region:"KSA",type:"Strategic",level:"L3",rootCause:"Churned — 360 feedback gap",owner:"Abdalla",opened:"2026-01-15",eta:"2026-06-01",status:"Churned"},
+  {id:5,account:"Almajdouie Motors",region:"KSA",type:"Strategic",level:"L2",rootCause:"Churned — adoption failure",owner:"Abdalla",opened:"2026-01-01",eta:"2026-05-01",status:"Churned"},
+];
+const SEED_PLAN=[
+  {phase:"0-30",action:"Establish ARR-at-risk baseline + full renewal calendar",owner:"Mohit",due:"2026-06-30",status:"Not Started",blocker:""},
+  {phase:"0-30",action:"Document all active escalations — root cause, owner, ETA",owner:"Mohit + Tameem",due:"2026-06-21",status:"In Progress",blocker:""},
+  {phase:"0-30",action:"Launch weekly CS operating rhythm",owner:"Mohit",due:"2026-06-14",status:"Not Started",blocker:""},
+  {phase:"0-30",action:"Abdalla: role clarity conversation + coaching plan",owner:"Mohit",due:"2026-06-09",status:"Not Started",blocker:""},
+  {phase:"0-30",action:"Team alignment session — one unified priority list",owner:"Mohit + Manager",due:"2026-06-20",status:"Not Started",blocker:"Manager availability"},
+  {phase:"0-30",action:"Account health scoring for 100% of accounts",owner:"Mohit + Team",due:"2026-06-30",status:"In Progress",blocker:""},
+  {phase:"0-30",action:"Form CS–Implementation SLA working group",owner:"Mohit + Manager",due:"2026-06-30",status:"Not Started",blocker:"Impl lead buy-in"},
+  {phase:"30-60",action:"Executive sponsorship activated — top KSA + ROME accounts",owner:"Mohit + Manager",due:"2026-07-31",status:"Not Started",blocker:"Executive calendars"},
+  {phase:"30-60",action:"CS–Impl SLA finalized and signed off",owner:"Mohit + Impl Lead",due:"2026-07-15",status:"Not Started",blocker:""},
+  {phase:"30-60",action:"ROME escalation review — Jumbo, Bank Nizwa, Nama",owner:"Tameem + Shweta",due:"2026-07-15",status:"Not Started",blocker:""},
+  {phase:"30-60",action:"Tameem's ROME strategic role formalized",owner:"Mohit + Tameem",due:"2026-07-01",status:"Not Started",blocker:""},
+  {phase:"30-60",action:"First monthly cross-functional sync conducted",owner:"Mohit",due:"2026-07-05",status:"Not Started",blocker:""},
+  {phase:"30-60",action:"Health scores live in CRM for 100% of accounts",owner:"Mohit + Team",due:"2026-07-20",status:"Not Started",blocker:"CRM access"},
+  {phase:"60-90",action:"QBRs completed for all strategic accounts",owner:"Mohit + Tameem + Team",due:"2026-08-31",status:"Not Started",blocker:""},
+  {phase:"60-90",action:"12-month renewal forecast presented to leadership",owner:"Mohit",due:"2026-08-25",status:"Not Started",blocker:""},
+  {phase:"60-90",action:"Team effectiveness review — morale, capacity, gaps",owner:"Mohit + Manager",due:"2026-08-20",status:"Not Started",blocker:""},
+  {phase:"60-90",action:"KSA in-person executive engagement cadence established",owner:"Mohit + Abdalla",due:"2026-08-31",status:"Not Started",blocker:"Travel approval"},
+  {phase:"60-90",action:"90-day performance summary delivered to leadership",owner:"Mohit",due:"2026-08-31",status:"Not Started",blocker:""},
+];
+
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+let ACCOUNTS=[],ESCALATIONS=[],EXEC=[],PLAN=[];
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+async function init(){
+  try{
+    document.getElementById('loading-msg').textContent='Opening IndexedDB...';
+    await openDB();
+    document.getElementById('loading-msg').textContent='Loading accounts...';
+    ACCOUNTS=await load('accounts',SEED_ACC);
+    ESCALATIONS=await load('escalations',SEED_ESC);
+    // Auto-purge support tickets > 120 days
+    const before=ESCALATIONS.length;
+    const cutoff=new Date();cutoff.setDate(cutoff.getDate()-120);
+    ESCALATIONS=ESCALATIONS.filter(e=>e.type!=='Support'||!e.opened||new Date(e.opened)>=cutoff);
+    if(ESCALATIONS.length<before){await idbPut('escalations','escalations',ESCALATIONS);toast('purge',`Auto-purged ${before-ESCALATIONS.length} old support tickets`);}
+    EXEC=await load('exec',ACCOUNTS.filter(a=>a.arr>50000).map(a=>({account:a.name,region:a.region,execSponsor:'—',customerExec:'—',lastContact:null,nextAction:'Schedule intro call',qbrDone:false})));
+    PLAN=await load('plan',SEED_PLAN);
+    await loadSheetUrl();
+    document.getElementById('loading-screen').style.display='none';
+    document.getElementById('app-root').style.display='flex';
+    renderPage('home');
+    updateDBInfo();
+    // Pull from sheet on load if URL is set
+    if(SHEET_URL)pullFromSheet().then(pulled=>{if(pulled)renderPage('home');});
+  }catch(e){
+    document.getElementById('loading-msg').textContent='Error: '+e.message;
+  }
+}
+
+async function updateDBInfo(){
+  try{
+    if(navigator.storage&&navigator.storage.estimate){
+      const e=await navigator.storage.estimate();
+      document.getElementById('db-info').textContent=`IndexedDB · ${(e.usage/1048576).toFixed(1)}MB used`;
+    }
+  }catch(e){}
+}
+
+// ═══════════════════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════════════════
+function nav(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(el)el.classList.add('active');
+  document.getElementById('page-title').textContent={home:'Leadership Summary',accounts:'Accounts',renewals:'Renewals',escalations:'Escalations',exec:'Exec Engagement',farming:'Farming Pipeline',plan:'90-Day Plan'}[id]||id;
+  renderPage(id);
+}
+function renderPage(id){
+  if(id==='home')renderHome();
+  else if(id==='accounts'){populateCSM('acc-csm');renderAccounts();}
+  else if(id==='renewals')renderRenewals();
+  else if(id==='escalations')renderEscalations();
+  else if(id==='exec')renderExec();
+  else if(id==='farming'){populateCSM('farm-csm');renderFarming();}
+  else if(id==='plan')renderPlan();
+}
+function populateCSM(id){
+  const s=document.getElementById(id);if(!s)return;
+  s.innerHTML='<option value="">All CSMs</option>'+[...new Set(ACCOUNTS.map(a=>a.csm))].sort().map(c=>`<option>${c}</option>`).join('');
+}
+
+// ═══════════════════════════════════════════════════
+// RENDER — HOME
+// ═══════════════════════════════════════════════════
+function renderHome(){
+  const el=document.getElementById('page-home');
+  const tARR=ACCOUNTS.reduce((s,a)=>s+a.arr,0);
+  const aRisk=ACCOUNTS.filter(a=>a.health==='Red').reduce((s,a)=>s+a.arr,0);
+  const churn=ACCOUNTS.filter(a=>a.status==='Churned').reduce((s,a)=>s+a.arr,0);
+  const soon=ACCOUNTS.filter(a=>{const d=dl(a.renewal);return d!==null&&d>=0&&d<=90;});
+  const escA=ESCALATIONS.filter(e=>e.status!=='Resolved'&&e.status!=='Churned').length;
+  const farm=ACCOUNTS.reduce((s,a)=>s+(a.farming&&a.farming.dealValue?+a.farming.dealValue:0),0);
+  el.innerHTML=`
+  <div class="metrics-grid">
+    <div class="metric-card"><div class="metric-val">${fmt(tARR)}</div><div class="metric-lbl">Total ARR</div><div class="metric-sub">${ACCOUNTS.length} accounts</div></div>
+    <div class="metric-card"><div class="metric-val" style="color:#A32D2D">${fmt(aRisk)}</div><div class="metric-lbl">ARR at Risk</div><div class="metric-sub">${ACCOUNTS.filter(a=>a.health==='Red').length} red</div></div>
+    <div class="metric-card"><div class="metric-val" style="color:#854F0B">${fmt(churn)}</div><div class="metric-lbl">ARR Churned</div></div>
+    <div class="metric-card"><div class="metric-val" style="color:#185FA5">${soon.length}</div><div class="metric-lbl">Renewals &lt;90d</div><div class="metric-sub">${fmt(soon.reduce((s,a)=>s+a.arr,0))}</div></div>
+    <div class="metric-card"><div class="metric-val" style="color:#A32D2D">${escA}</div><div class="metric-lbl">Open Escalations</div></div>
+    <div class="metric-card"><div class="metric-val" style="color:#0F6E56">${fmt(farm)}</div><div class="metric-lbl">Farming Pipeline</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><div class="card-header"><span class="card-title">Renewals — next 90 days</span></div>
+    <table><thead><tr><th>Account</th><th>ARR</th><th>Days</th><th>CSM</th><th>Health</th></tr></thead><tbody>
+    ${soon.sort((a,b)=>dl(a.renewal)-dl(b.renewal)).slice(0,6).map(a=>`<tr><td style="font-weight:600">${a.name}</td><td>${fmtK(a.arr)}</td><td style="color:${dl(a.renewal)<30?'#A32D2D':dl(a.renewal)<60?'#854F0B':'#3B6D11'};font-weight:600">${dl(a.renewal)}d</td><td>${a.csm}</td><td><span class="badge ${hB(a.health)}">${a.health}</span></td></tr>`).join('')}
+    </tbody></table></div>
+    <div class="card"><div class="card-header"><span class="card-title">Active escalations</span></div>
+    ${ESCALATIONS.filter(e=>e.status!=='Resolved').map(e=>`<div style="padding:8px 0;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:8px"><span class="badge ${eLC(e.level)}">${e.level}</span><div style="flex:1"><div style="font-size:12px;font-weight:600">${e.account}</div><div style="font-size:11px;color:var(--text-secondary)">${e.rootCause}</div></div><span class="badge ${sSt(e.status)}">${e.status}</span></div>`).join('')}</div>
+  </div>
+  <div class="grid2">
+    <div class="card"><div class="card-header"><span class="card-title">Health by region</span></div>
+    <div style="margin-bottom:10px"><div style="font-size:12px;font-weight:600;margin-bottom:6px">KSA</div><div style="display:flex;gap:6px">${['Red','Amber','Green'].map(h=>`<span class="badge ${hB(h)}">${ACCOUNTS.filter(a=>a.region==='KSA'&&a.health===h).length} ${h}</span>`).join('')}</div></div>
+    <div><div style="font-size:12px;font-weight:600;margin-bottom:6px">ROME</div><div style="display:flex;gap:6px">${['Red','Amber','Green'].map(h=>`<span class="badge ${hB(h)}">${ACCOUNTS.filter(a=>a.region==='ME'&&a.health===h).length} ${h}</span>`).join('')}</div></div></div>
+    <div class="card"><div class="card-header"><span class="card-title">ARR by CSM</span></div>
+    ${['Shweta','Abdalla','Tameem','Asik','Sreyas'].map(c=>{const a=ACCOUNTS.filter(x=>x.csm===c).reduce((s,x)=>s+x.arr,0);const n=ACCOUNTS.filter(x=>x.csm===c).length;return`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="width:56px;font-size:12px">${c}</div><div class="pb" style="width:110px"><div class="pb-fill" style="width:${Math.min(100,a/4000)}%"></div></div><div style="font-size:11px;color:var(--text-secondary)">${fmt(a)} · ${n}</div></div>`;}).join('')}</div>
+  </div>`;
+}
+
+function renderAccounts(){
+  const reg=document.getElementById('acc-region').value,hlth=document.getElementById('acc-health').value,csm=document.getElementById('acc-csm').value,srch=document.getElementById('acc-search').value.toLowerCase();
+  const data=ACCOUNTS.filter(a=>(!reg||(reg==='ME'?a.region==='ME':a.region===reg))&&(!hlth||a.health===hlth)&&(!csm||a.csm===csm)&&(!srch||a.name.toLowerCase().includes(srch)));
+  document.getElementById('acc-tbody').innerHTML=data.map(a=>`<tr><td style="font-weight:600">${a.name}</td><td>${rB(a.region)}</td><td>${a.csm}</td><td>${fmt(a.arr)}</td><td style="font-size:11px;color:var(--text-secondary)">${a.product}</td><td><span class="badge ${a.status==='Churned'?'b-red':a.status==='Live'?'b-green':'b-amber'}">${a.status}</span></td><td><span class="badge ${hB(a.health)}">${a.health}</span></td><td style="font-size:11px">${fmtD(a.renewal)}</td><td style="font-size:11px;color:var(--text-secondary)">${a.pulse||'—'}</td><td><button class="btn btn-sm" onclick="editAccount(${ACCOUNTS.indexOf(a)})"><i class="ti ti-edit"></i></button></td></tr>`).join('');
+}
+
+function renderRenewals(){
+  const reg=document.getElementById('ren-region').value,st=document.getElementById('ren-status').value;
+  const data=ACCOUNTS.filter(a=>a.renewal&&(!reg||(reg==='ME'?a.region==='ME':a.region===reg))&&(!st||a.renewalStatus===st)).sort((a,b)=>new Date(a.renewal)-new Date(b.renewal));
+  const tot=data.reduce((s,a)=>s+a.arr,0),risk=data.filter(a=>a.health==='Red').reduce((s,a)=>s+a.arr,0),soon=data.filter(a=>{const d=dl(a.renewal);return d!==null&&d>=0&&d<=90;});
+  document.getElementById('ren-metrics').innerHTML=`<div class="metric-card"><div class="metric-val">${data.length}</div><div class="metric-lbl">Tracked</div></div><div class="metric-card"><div class="metric-val">${fmt(tot)}</div><div class="metric-lbl">ARR in view</div></div><div class="metric-card"><div class="metric-val" style="color:#A32D2D">${fmt(risk)}</div><div class="metric-lbl">At risk</div></div><div class="metric-card"><div class="metric-val" style="color:#185FA5">${soon.length}</div><div class="metric-lbl">Due &lt;90d</div></div>`;
+  document.getElementById('ren-tbody').innerHTML=data.map(a=>{const d=dl(a.renewal);const uc=d===null?'var(--text-secondary)':d<0?'#A32D2D':d<30?'#A32D2D':d<60?'#854F0B':'#3B6D11';return`<tr><td style="font-weight:600">${a.name}</td><td>${rB(a.region)}</td><td>${a.csm}</td><td>${fmt(a.arr)}</td><td style="font-size:11px">${fmtD(a.renewal)}</td><td style="color:${uc};font-weight:600">${d===null?'—':d<0?'Overdue':d+'d'}</td><td><span class="badge ${a.renewalStatus==='Churned'?'b-red':a.renewalStatus==='At Risk'?'b-amber':'b-green'}">${a.renewalStatus||'On Track'}</span></td><td><div class="pb" style="width:70px"><div class="pb-fill" style="width:${a.confidence||70}%"></div></div> <span style="font-size:11px">${a.confidence||70}%</span></td><td style="font-size:11px;color:var(--text-secondary)">${a.notes||'—'}</td><td><button class="btn btn-sm" onclick="editAccount(${ACCOUNTS.indexOf(a)})"><i class="ti ti-edit"></i></button></td></tr>`;}).join('');
+}
+
+function renderEscalations(){
+  const reg=document.getElementById('esc-region').value,lv=document.getElementById('esc-level').value,tp=document.getElementById('esc-type').value;
+  const data=ESCALATIONS.filter(e=>(!reg||(reg==='ME'?e.region==='ME':e.region===reg))&&(!lv||e.level===lv)&&(!tp||e.type===tp));
+  const sc=ESCALATIONS.filter(e=>e.type==='Support').length;
+  const old=ESCALATIONS.filter(e=>e.type==='Support'&&e.opened).sort((a,b)=>new Date(a.opened)-new Date(b.opened))[0];
+  document.getElementById('esc-info').innerHTML=sc>0?`<div class="info-box"><i class="ti ti-info-circle"></i>${sc} support ticket${sc>1?'s':''} stored${old?` · oldest: ${fmtD(old.opened)}`:''}. Auto-purge removes tickets >120 days on app load.</div>`:'';
+  document.getElementById('esc-tbody').innerHTML=data.map(e=>`<tr><td style="font-weight:600">${e.account}</td><td>${rB(e.region)}</td><td><span class="badge ${e.type==='Strategic'?'b-purple':'b-blue'}">${e.type}</span></td><td><span class="badge ${eLC(e.level)}">${e.level}</span></td><td style="font-size:11px;max-width:180px">${e.rootCause}</td><td>${e.owner}</td><td style="font-size:11px">${e.opened}</td><td style="font-size:11px">${e.eta||'—'}</td><td><span class="badge ${sSt(e.status)}">${e.status}</span></td><td><button class="btn btn-sm" onclick="editEsc(${ESCALATIONS.indexOf(e)})"><i class="ti ti-edit"></i></button></td></tr>`).join('');
+}
+
+function renderExec(){
+  const cov=EXEC.filter(e=>e.execSponsor&&e.execSponsor!=='—').length;
+  document.getElementById('exec-metrics').innerHTML=`<div class="metric-card"><div class="metric-val">${EXEC.length}</div><div class="metric-lbl">Strategic accounts</div></div><div class="metric-card"><div class="metric-val">${cov}</div><div class="metric-lbl">Exec sponsor assigned</div></div><div class="metric-card"><div class="metric-val" style="color:#A32D2D">${EXEC.length-cov}</div><div class="metric-lbl">No sponsor yet</div></div><div class="metric-card"><div class="metric-val">${EXEC.filter(e=>e.qbrDone).length}</div><div class="metric-lbl">QBRs done</div></div>`;
+  document.getElementById('exec-tbody').innerHTML=EXEC.map((e,i)=>`<tr><td style="font-weight:600">${e.account}</td><td>${rB(e.region)}</td><td>${e.execSponsor||'—'}</td><td>${e.customerExec||'—'}</td><td style="font-size:11px">${e.lastContact||'—'}</td><td style="font-size:11px;color:${e.lastContact?'var(--text-secondary)':'#A32D2D'}">${e.lastContact?Math.round((new Date()-new Date(e.lastContact))/86400000)+'d ago':'Never'}</td><td style="font-size:11px">${e.nextAction||'—'}</td><td><span class="badge ${e.qbrDone?'b-green':'b-amber'}">${e.qbrDone?'Done':'Pending'}</span></td><td><button class="btn btn-sm" onclick="editExec(${i})"><i class="ti ti-edit"></i></button></td></tr>`).join('');
+}
+
+function renderFarming(){
+  const reg=document.getElementById('farm-region').value,csm=document.getElementById('farm-csm').value,hlth=document.getElementById('farm-health').value,srch=document.getElementById('farm-search').value.toLowerCase();
+  const data=ACCOUNTS.filter(a=>(!reg||(reg==='ME'?a.region==='ME':a.region===reg))&&(!csm||a.csm===csm)&&(!hlth||a.health===hlth)&&(!srch||a.name.toLowerCase().includes(srch)));
+  const totP=ACCOUNTS.reduce((s,a)=>s+(a.farming&&a.farming.dealValue?+a.farming.dealValue:0),0);
+  const wF=ACCOUNTS.filter(a=>a.farming&&a.farming.types&&a.farming.types.length>0);
+  const tc={};FT.forEach(t=>{tc[t]=ACCOUNTS.filter(a=>a.farming&&a.farming.types&&a.farming.types.includes(t)).length;});
+  document.getElementById('farm-metrics').innerHTML=`<div class="metric-card"><div class="metric-val" style="color:#0F6E56">${fmt(totP)}</div><div class="metric-lbl">Total pipeline</div></div><div class="metric-card"><div class="metric-val">${wF.length}</div><div class="metric-lbl">With opportunity</div></div>${FT.map(t=>`<div class="metric-card"><div class="metric-val">${tc[t]}</div><div class="metric-lbl" style="font-size:10px">${t}</div></div>`).join('')}`;
+  document.getElementById('farm-tbody').innerHTML=data.map(a=>{const f=a.farming||{types:[],dealValue:0,quarter:'',remarks:''};return`<tr><td style="font-weight:600">${a.name}</td><td>${rB(a.region)}</td><td>${a.csm}</td><td>${fmt(a.arr)}</td><td><span class="badge ${hB(a.health)}">${a.health}</span></td><td><div class="fb">${f.types&&f.types.length?f.types.map(t=>`<span class="badge ${fBC(t)}" style="font-size:10px">${t}</span>`).join(''):'<span style="font-size:11px;color:var(--text-secondary)">—</span>'}</div></td><td style="font-weight:600;color:#0F6E56">${f.dealValue?fmt(f.dealValue):'—'}</td><td style="font-size:11px">${f.quarter||'—'}</td><td style="font-size:11px;color:var(--text-secondary);max-width:140px">${f.remarks||'—'}</td><td><button class="btn btn-sm" onclick="editFarming(${ACCOUNTS.indexOf(a)})"><i class="ti ti-edit"></i></button></td></tr>`;}).join('');
+}
+
+function renderPlan(){
+  const done=PLAN.filter(p=>p.status==='Done').length;
+  document.getElementById('plan-metrics').innerHTML=`<div class="metric-card"><div class="metric-val">${PLAN.length}</div><div class="metric-lbl">Total actions</div></div><div class="metric-card"><div class="metric-val" style="color:#3B6D11">${done}</div><div class="metric-lbl">Completed</div></div><div class="metric-card"><div class="metric-val" style="color:#854F0B">${PLAN.filter(p=>p.status==='In Progress').length}</div><div class="metric-lbl">In Progress</div></div><div class="metric-card"><div class="metric-val" style="color:#A32D2D">${PLAN.filter(p=>p.blocker&&p.blocker.length&&p.status!=='Done').length}</div><div class="metric-lbl">Blocked</div></div>`;
+  [{id:'0-30',label:'Phase 1 — Days 0–30: Stabilize & Structure'},{id:'30-60',label:'Phase 2 — Days 30–60: Execute & Protect'},{id:'60-90',label:'Phase 3 — Days 60–90: Demonstrate & Scale'}].forEach(ph=>{
+    document.getElementById('plan-phases').innerHTML=[{id:'0-30',label:'Phase 1 — Days 0–30: Stabilize & Structure'},{id:'30-60',label:'Phase 2 — Days 30–60: Execute & Protect'},{id:'60-90',label:'Phase 3 — Days 60–90: Demonstrate & Scale'}].map(ph=>`<div class="card"><div class="card-header"><span class="card-title">${ph.label}</span><span style="font-size:11px;color:var(--text-secondary)">${PLAN.filter(p=>p.phase===ph.id&&p.status==='Done').length}/${PLAN.filter(p=>p.phase===ph.id).length} done</span></div>${PLAN.filter(p=>p.phase===ph.id).map(p=>`<div class="action-row"><div class="sdot ${p.status==='Done'?'sd-green':p.status==='In Progress'?'sd-amber':p.blocker?'sd-red':'sd-gray'}"></div><div style="flex:1;font-size:12px">${p.action}${p.blocker?`<div style="font-size:10px;color:#A32D2D;margin-top:2px">⚑ ${p.blocker}</div>`:''}</div><div style="font-size:11px;color:var(--text-secondary);white-space:nowrap;margin-right:8px">${p.owner}</div><div style="font-size:11px;color:var(--text-secondary);white-space:nowrap;margin-right:8px">${p.due}</div><select style="padding:3px 6px;font-size:11px;width:110px" onchange="setPlanStatus(${PLAN.indexOf(p)},this.value)"><option ${p.status==='Not Started'?'selected':''}>Not Started</option><option ${p.status==='In Progress'?'selected':''}>In Progress</option><option ${p.status==='Done'?'selected':''}>Done</option><option ${p.status==='Blocked'?'selected':''}>Blocked</option></select></div>`).join('')}</div>`).join('');
+  });
+}
+async function setPlanStatus(i,v){PLAN[i].status=v;await save('plan',PLAN);renderPlan();}
+
+// ═══════════════════════════════════════════════════
+// MODALS
+// ═══════════════════════════════════════════════════
+function openAddModal(){
+  const pg=document.querySelector('.page.active').id;
+  if(pg==='page-farming')editFarming(-1);
+  else if(pg==='page-escalations')editEsc(-1);
+  else if(pg==='page-exec')editExec(-1);
+  else if(pg==='page-plan')editPlan(-1);
+  else editAccount(-1);
+}
+
+function editAccount(i){
+  const a=i>=0?ACCOUNTS[i]:{};
+  document.getElementById('modal-title').textContent=i>=0?'Edit Account':'Add Account';
+  document.getElementById('modal-body').innerHTML=`<div class="form-grid"><div class="form-group"><label>Account name</label><input type="text" id="f-name" value="${a.name||''}"></div><div class="form-group"><label>Region</label><select id="f-reg"><option ${a.region==='ME'?'selected':''} value="ME">ROME / ME</option><option ${a.region==='KSA'?'selected':''} value="KSA">KSA</option></select></div><div class="form-group"><label>CSM</label><select id="f-csm"><option>Shweta</option><option>Abdalla</option><option>Tameem</option><option>Asik</option><option>Sreyas</option></select></div><div class="form-group"><label>ARR ($)</label><input type="number" id="f-arr" value="${a.arr||''}"></div><div class="form-group"><label>Product</label><input type="text" id="f-prod" value="${a.product||''}"></div><div class="form-group"><label>Status</label><select id="f-st"><option ${a.status==='Live'?'selected':''}>Live</option><option ${a.status==='Not Live'?'selected':''}>Not Live</option><option ${a.status==='Implementation'?'selected':''}>Implementation</option><option ${a.status==='Churned'?'selected':''}>Churned</option><option ${a.status==='Partially Live'?'selected':''}>Partially Live</option></select></div><div class="form-group"><label>Health</label><select id="f-hlth"><option ${a.health==='Green'?'selected':''}>Green</option><option ${a.health==='Amber'?'selected':''}>Amber</option><option ${a.health==='Red'?'selected':''}>Red</option></select></div><div class="form-group"><label>Renewal status</label><select id="f-rst"><option ${a.renewalStatus==='On Track'?'selected':''}>On Track</option><option ${a.renewalStatus==='At Risk'?'selected':''}>At Risk</option><option ${a.renewalStatus==='Churned'?'selected':''}>Churned</option></select></div><div class="form-group"><label>Renewal date</label><input type="date" id="f-ren" value="${toISO(a.renewal)}"></div><div class="form-group"><label>Confidence %</label><input type="number" id="f-conf" value="${a.confidence||70}" min="0" max="100"></div><div class="form-group"><label>Pulse</label><input type="text" id="f-pulse" value="${a.pulse||''}"></div></div><div class="form-group"><label>Notes</label><textarea id="f-notes" rows="2">${a.notes||''}</textarea></div><div style="display:flex;gap:8px;margin-top:14px"><button class="btn btn-primary" onclick="saveAccount(${i})">Save</button>${i>=0?`<button class="btn btn-danger" onclick="delAccount(${i})">Delete</button>`:''}<button class="btn" onclick="closeModal()">Cancel</button></div>`;
+  const s=document.getElementById('f-csm');[...s.options].forEach(o=>{if(o.value===a.csm)o.selected=true;});
+  openModal();
+}
+async function saveAccount(i){
+  const a={name:document.getElementById('f-name').value,region:document.getElementById('f-reg').value,csm:document.getElementById('f-csm').value,arr:parseFloat(document.getElementById('f-arr').value)||0,product:document.getElementById('f-prod').value,status:document.getElementById('f-st').value,health:document.getElementById('f-hlth').value,renewalStatus:document.getElementById('f-rst').value,renewal:document.getElementById('f-ren').value||null,confidence:parseInt(document.getElementById('f-conf').value)||70,pulse:document.getElementById('f-pulse').value,notes:document.getElementById('f-notes').value,country:i>=0?ACCOUNTS[i].country||'':'',farming:i>=0?(ACCOUNTS[i].farming||{types:[],dealValue:0,quarter:'',remarks:''}):{types:[],dealValue:0,quarter:'',remarks:''},execSponsor:i>=0?ACCOUNTS[i].execSponsor:'—',customerExec:i>=0?ACCOUNTS[i].customerExec:'—',qbrDone:i>=0?ACCOUNTS[i].qbrDone:false};
+  if(i>=0)ACCOUNTS[i]=a;else ACCOUNTS.push(a);
+  await save('accounts',ACCOUNTS);closeModal();
+  const pg=document.querySelector('.page.active').id;
+  if(pg==='page-renewals')renderRenewals();else if(pg==='page-farming')renderFarming();else if(pg==='page-home')renderHome();else renderAccounts();
+}
+async function delAccount(i){if(confirm('Delete?')){ACCOUNTS.splice(i,1);await save('accounts',ACCOUNTS);closeModal();renderAccounts();}}
+
+function editFarming(i){
+  const a=i>=0?ACCOUNTS[i]:{name:'',farming:{types:[],dealValue:0,quarter:'',remarks:''}};
+  const f=a.farming||{types:[],dealValue:0,quarter:'',remarks:''};
+  document.getElementById('modal-title').textContent=`Farming — ${a.name||'Account'}`;
+  document.getElementById('modal-body').innerHTML=`${i>=0?`<div style="margin-bottom:12px;padding:10px;background:var(--bg-secondary);border-radius:var(--radius-md)"><span style="font-size:12px;font-weight:600">${a.name}</span> <span style="font-size:11px;color:var(--text-secondary)">${a.csm} · ${fmt(a.arr)} · ${rB(a.region)}</span></div>`:''}<div class="form-group"><label>Farming type (select all that apply)</label><div class="cb-grid">${FT.map(t=>`<label class="cb-item"><input type="checkbox" value="${t}" ${f.types&&f.types.includes(t)?'checked':''}> ${t}</label>`).join('')}</div></div><div class="form-grid"><div class="form-group"><label>Deal value ($)</label><input type="number" id="ff-deal" value="${f.dealValue||''}"></div><div class="form-group"><label>Closure quarter</label><select id="ff-q"><option value="">Select</option>${QS.map(q=>`<option ${f.quarter===q?'selected':''} value="${q}">${q}</option>`).join('')}</select></div></div><div class="form-group"><label>Remarks</label><textarea id="ff-rem" rows="3">${f.remarks||''}</textarea></div><div style="display:flex;gap:8px;margin-top:14px"><button class="btn btn-primary" onclick="saveFarming(${i})">Save</button><button class="btn" onclick="closeModal()">Cancel</button></div>`;
+  openModal();
+}
+async function saveFarming(i){
+  if(i<0)return;
+  ACCOUNTS[i].farming={types:[...document.querySelectorAll('#modal-body input[type=checkbox]:checked')].map(c=>c.value),dealValue:parseFloat(document.getElementById('ff-deal').value)||0,quarter:document.getElementById('ff-q').value,remarks:document.getElementById('ff-rem').value};
+  await save('accounts',ACCOUNTS);closeModal();renderFarming();
+}
+
+function editEsc(i){
+  const e=i>=0?ESCALATIONS[i]:{};
+  document.getElementById('modal-title').textContent=i>=0?'Edit Escalation':'Add Escalation';
+  document.getElementById('modal-body').innerHTML=`<div class="form-grid"><div class="form-group"><label>Account</label><input type="text" id="ef-acc" value="${e.account||''}"></div><div class="form-group"><label>Region</label><select id="ef-reg"><option ${e.region==='ME'?'selected':''} value="ME">ROME / ME</option><option ${e.region==='KSA'?'selected':''} value="KSA">KSA</option></select></div><div class="form-group"><label>Type</label><select id="ef-tp"><option ${e.type==='Strategic'?'selected':''}>Strategic</option><option ${e.type==='Support'?'selected':''}>Support</option></select></div><div class="form-group"><label>Level</label><select id="ef-lv"><option ${e.level==='L4'?'selected':''}>L4</option><option ${e.level==='L3'?'selected':''}>L3</option><option ${e.level==='L2'?'selected':''}>L2</option><option ${e.level==='L1'?'selected':''}>L1</option><option ${e.level==='L0'?'selected':''}>L0</option></select></div><div class="form-group"><label>Owner</label><input type="text" id="ef-own" value="${e.owner||''}"></div><div class="form-group"><label>Status</label><select id="ef-st"><option ${e.status==='In Progress'?'selected':''}>In Progress</option><option ${e.status==='Escalated'?'selected':''}>Escalated</option><option ${e.status==='Resolved'?'selected':''}>Resolved</option><option ${e.status==='Churned'?'selected':''}>Churned</option><option ${e.status==='Blocked'?'selected':''}>Blocked</option></select></div><div class="form-group"><label>Date opened</label><input type="date" id="ef-op" value="${e.opened||''}"></div><div class="form-group"><label>ETA</label><input type="date" id="ef-eta" value="${e.eta||''}"></div></div><div class="form-group"><label>Root cause</label><textarea id="ef-rc" rows="2">${e.rootCause||''}</textarea></div><div style="display:flex;gap:8px;margin-top:14px"><button class="btn btn-primary" onclick="saveEsc(${i})">Save</button>${i>=0?`<button class="btn btn-danger" onclick="delEsc(${i})">Delete</button>`:''}<button class="btn" onclick="closeModal()">Cancel</button></div>`;
+  openModal();
+}
+async function saveEsc(i){
+  const e={account:document.getElementById('ef-acc').value,region:document.getElementById('ef-reg').value,type:document.getElementById('ef-tp').value,level:document.getElementById('ef-lv').value,owner:document.getElementById('ef-own').value,status:document.getElementById('ef-st').value,opened:document.getElementById('ef-op').value,eta:document.getElementById('ef-eta').value,rootCause:document.getElementById('ef-rc').value,id:i>=0?ESCALATIONS[i].id:Date.now()};
+  if(i>=0)ESCALATIONS[i]=e;else ESCALATIONS.push(e);
+  await save('escalations',ESCALATIONS);closeModal();renderEscalations();
+}
+async function delEsc(i){if(confirm('Delete?')){ESCALATIONS.splice(i,1);await save('escalations',ESCALATIONS);closeModal();renderEscalations();}}
+
+function editExec(i){
+  const e=i>=0?EXEC[i]:{};
+  document.getElementById('modal-title').textContent=i>=0?'Edit Exec Engagement':'Add';
+  document.getElementById('modal-body').innerHTML=`<div class="form-grid"><div class="form-group"><label>Account</label><input type="text" id="xf-acc" value="${e.account||''}"></div><div class="form-group"><label>Region</label><select id="xf-reg"><option ${e.region==='ME'?'selected':''} value="ME">ROME</option><option ${e.region==='KSA'?'selected':''} value="KSA">KSA</option></select></div><div class="form-group"><label>Our exec sponsor</label><input type="text" id="xf-sp" value="${e.execSponsor||''}"></div><div class="form-group"><label>Customer exec</label><input type="text" id="xf-ce" value="${e.customerExec||''}"></div><div class="form-group"><label>Last contact</label><input type="date" id="xf-lc" value="${e.lastContact||''}"></div><div class="form-group"><label>QBR done?</label><select id="xf-qbr"><option value="false" ${!e.qbrDone?'selected':''}>Pending</option><option value="true" ${e.qbrDone?'selected':''}>Done</option></select></div></div><div class="form-group"><label>Next action</label><input type="text" id="xf-na" value="${e.nextAction||''}"></div><div style="display:flex;gap:8px;margin-top:14px"><button class="btn btn-primary" onclick="saveExec(${i})">Save</button><button class="btn" onclick="closeModal()">Cancel</button></div>`;
+  openModal();
+}
+async function saveExec(i){
+  const e={account:document.getElementById('xf-acc').value,region:document.getElementById('xf-reg').value,execSponsor:document.getElementById('xf-sp').value,customerExec:document.getElementById('xf-ce').value,lastContact:document.getElementById('xf-lc').value,qbrDone:document.getElementById('xf-qbr').value==='true',nextAction:document.getElementById('xf-na').value};
+  if(i>=0)EXEC[i]=e;else EXEC.push(e);
+  await save('exec',EXEC);closeModal();renderExec();
+}
+
+function editPlan(i){
+  const p=i>=0?PLAN[i]:{};
+  document.getElementById('modal-title').textContent=i>=0?'Edit Action':'Add Action';
+  document.getElementById('modal-body').innerHTML=`<div class="form-group"><label>Phase</label><select id="pf-ph"><option ${p.phase==='0-30'?'selected':''} value="0-30">0–30 days</option><option ${p.phase==='30-60'?'selected':''} value="30-60">30–60 days</option><option ${p.phase==='60-90'?'selected':''} value="60-90">60–90 days</option></select></div><div class="form-group"><label>Action</label><textarea id="pf-act" rows="2">${p.action||''}</textarea></div><div class="form-grid"><div class="form-group"><label>Owner</label><input type="text" id="pf-own" value="${p.owner||''}"></div><div class="form-group"><label>Due date</label><input type="date" id="pf-due" value="${p.due||''}"></div><div class="form-group"><label>Status</label><select id="pf-st"><option ${p.status==='Not Started'?'selected':''}>Not Started</option><option ${p.status==='In Progress'?'selected':''}>In Progress</option><option ${p.status==='Done'?'selected':''}>Done</option><option ${p.status==='Blocked'?'selected':''}>Blocked</option></select></div></div><div class="form-group"><label>Blocker</label><input type="text" id="pf-bl" value="${p.blocker||''}"></div><div style="display:flex;gap:8px;margin-top:14px"><button class="btn btn-primary" onclick="savePlan(${i})">Save</button>${i>=0?`<button class="btn btn-danger" onclick="delPlan(${i})">Delete</button>`:''}<button class="btn" onclick="closeModal()">Cancel</button></div>`;
+  openModal();
+}
+async function savePlan(i){
+  const p={phase:document.getElementById('pf-ph').value,action:document.getElementById('pf-act').value,owner:document.getElementById('pf-own').value,due:document.getElementById('pf-due').value,status:document.getElementById('pf-st').value,blocker:document.getElementById('pf-bl').value};
+  if(i>=0)PLAN[i]=p;else PLAN.push(p);
+  await save('plan',PLAN);closeModal();renderPlan();
+}
+async function delPlan(i){if(confirm('Delete?')){PLAN.splice(i,1);await save('plan',PLAN);closeModal();renderPlan();}}
+
+// ═══════════════════════════════════════════════════
+// IMPORT + CLEANUP
+// ═══════════════════════════════════════════════════
+let importTickets=[];
+function openImportModal(){
+  document.getElementById('modal-title').textContent='Import escalation report';
+  document.getElementById('modal-body').innerHTML=`<p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">Upload your Disprz HTML report. L1+ ME/ROW tickets will be previewed before import.</p><div class="upload-area" onclick="document.getElementById('upl-in').click()"><i class="ti ti-upload" style="font-size:24px;margin-bottom:6px;display:block"></i><div style="font-size:12px;font-weight:600">Click to upload HTML file</div><div style="font-size:11px;margin-top:2px">Disprz_Escalation_*.html</div></div><input type="file" id="upl-in" accept=".html,.htm" style="display:none" onchange="handleUpload(this)"><div id="upl-prev"></div><div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-primary" id="upl-btn" style="display:none" onclick="confirmImport()"><i class="ti ti-check"></i>Import</button><button class="btn" onclick="closeModal()">Cancel</button></div>`;
+  importTickets=[];openModal();
+}
+function handleUpload(input){
+  const f=input.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const doc=new DOMParser().parseFromString(e.target.result,'text/html');
+    importTickets=[];
+    doc.querySelectorAll('table tbody tr').forEach(row=>{
+      const cells=[...row.querySelectorAll('td')].map(c=>c.textContent.trim());
+      if(cells.length<5)return;
+      const m=row.textContent.match(/L[1-4]/);if(!m)return;
+      importTickets.push({id:Date.now()+importTickets.length,account:cells[1]||'Unknown',region:'ME',type:'Support',level:m[0],rootCause:cells[2]||'Support ticket',owner:cells[5]||'TAM',opened:new Date().toISOString().split('T')[0],eta:'',status:'In Progress'});
+    });
+    const prev=document.getElementById('upl-prev');
+    if(!importTickets.length){prev.innerHTML=`<div style="margin-top:8px;padding:8px;background:#FAEEDA;border-radius:6px;font-size:12px;color:#854F0B">No L1+ tickets found.</div>`;document.getElementById('upl-btn').style.display='none';return;}
+    prev.innerHTML=`<div style="font-size:12px;font-weight:600;margin:8px 0 4px;color:#0F6E56">${importTickets.length} ticket${importTickets.length>1?'s':''} found</div><div class="preview-box"><table style="font-size:11px;width:100%"><thead><tr><th>Account</th><th>Level</th><th>Owner</th></tr></thead><tbody>${importTickets.map(t=>`<tr><td style="font-weight:600">${t.account}</td><td><span class="badge ${eLC(t.level)}">${t.level}</span></td><td>${t.owner}</td></tr>`).join('')}</tbody></table></div>`;
+    document.getElementById('upl-btn').style.display='inline-flex';
+  };
+  r.readAsText(f);
+}
+async function confirmImport(){
+  let n=0;importTickets.forEach(t=>{if(!ESCALATIONS.find(e=>e.account===t.account&&e.type==='Support')){ESCALATIONS.push(t);n++;}});
+  await save('escalations',ESCALATIONS);closeModal();renderEscalations();
+  toast('save',`${n} ticket${n!==1?'s':''} imported`);
+}
+
+function openCleanupModal(){
+  document.getElementById('modal-title').textContent='Clear old support tickets';
+  const counts={};[30,60,90,120].forEach(d=>{const c=new Date();c.setDate(c.getDate()-d);counts[d]=ESCALATIONS.filter(e=>e.type==='Support'&&e.opened&&new Date(e.opened)<c).length;});
+  document.getElementById('modal-body').innerHTML=`<p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">Strategic escalations are never deleted. Only Support tickets from daily imports.</p>${[30,60,90,120].map(d=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg-secondary);border-radius:var(--radius-md);margin-bottom:8px"><div><div style="font-size:12px;font-weight:600">Older than ${d} days</div><div style="font-size:11px;color:var(--text-secondary)">${counts[d]} ticket${counts[d]!==1?'s':''} will be deleted</div></div><button class="btn ${counts[d]>0?'btn-danger':''}" onclick="doCleanup(${d})" ${counts[d]===0?'disabled':''}>Delete ${counts[d]}</button></div>`).join('')}<div style="margin-top:12px"><button class="btn" onclick="closeModal()">Close</button></div>`;
+  openModal();
+}
+async function doCleanup(days){
+  const c=new Date();c.setDate(c.getDate()-days);
+  const before=ESCALATIONS.length;
+  ESCALATIONS=ESCALATIONS.filter(e=>e.type!=='Support'||!e.opened||new Date(e.opened)>=c);
+  await save('escalations',ESCALATIONS);closeModal();renderEscalations();
+  toast('purge',`Deleted ${before-ESCALATIONS.length} support tickets older than ${days} days`);
+}
+
+// ═══════════════════════════════════════════════════
+// BACKUP / RESTORE
+// ═══════════════════════════════════════════════════
+function exportBackup(){
+  const b=new Blob([JSON.stringify({version:4,exported:new Date().toISOString(),accounts:ACCOUNTS,escalations:ESCALATIONS,exec:EXEC,plan:PLAN},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`csops_backup_${new Date().toISOString().substring(0,10)}.json`;a.click();
+}
+function restoreBackup(input){
+  const f=input.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=async e=>{
+    try{
+      const d=JSON.parse(e.target.result);
+      if(!d.accounts)throw new Error('Invalid backup');
+      if(!confirm(`Restore from ${(d.exported||'').substring(0,10)}? This replaces all current data.`))return;
+      ACCOUNTS=d.accounts;ESCALATIONS=d.escalations;EXEC=d.exec||[];PLAN=d.plan||[];
+      await idbPut('accounts','accounts',ACCOUNTS);await idbPut('escalations','escalations',ESCALATIONS);await idbPut('exec_eng','exec',EXEC);await idbPut('plan90','plan',PLAN);
+      renderPage('home');toast('save','Backup restored');
+    }catch(err){alert('Invalid backup file.');}
+  };
+  r.readAsText(f);input.value='';
+}
+
+// ═══════════════════════════════════════════════════
+// PDF EXPORT
+// ═══════════════════════════════════════════════════
+function exportPDF(){
+  const tARR=ACCOUNTS.reduce((s,a)=>s+a.arr,0),aRisk=ACCOUNTS.filter(a=>a.health==='Red').reduce((s,a)=>s+a.arr,0);
+  const soon=ACCOUNTS.filter(a=>{const d=dl(a.renewal);return d!==null&&d>=0&&d<=90;}).sort((a,b)=>new Date(a.renewal)-new Date(b.renewal));
+  const farmP=ACCOUNTS.reduce((s,a)=>s+(a.farming&&a.farming.dealValue?+a.farming.dealValue:0),0);
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>MEA CS Summary — ${new Date().toDateString()}</title><style>body{font-family:Arial,sans-serif;color:#1C2E4A;padding:32px;max-width:960px;margin:0 auto}h1{font-size:20px;margin-bottom:2px}p{font-size:12px;color:#888;margin-bottom:20px}.g{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}.m{background:#F8FAFC;border-radius:8px;padding:12px;text-align:center}.mv{font-size:20px;font-weight:700}.ml{font-size:10px;color:#888;text-transform:uppercase;margin-top:2px}table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px}th{background:#1C2E4A;color:white;padding:7px 10px;text-align:left}td{padding:7px 10px;border-bottom:1px solid #eee}.h{font-size:14px;font-weight:700;color:#1C2E4A;margin:18px 0 8px;border-bottom:2px solid #2563C0;padding-bottom:4px}</style></head><body>
+  <h1>MEA CS Leadership Summary</h1><p>${new Date().toDateString()} · Confidential · ${lastSyncTime?'Last synced: '+lastSyncTime.toLocaleTimeString():''}</p>
+  <div class="g"><div class="m"><div class="mv">${fmt(tARR)}</div><div class="ml">Total ARR</div></div><div class="m"><div class="mv" style="color:#A32D2D">${fmt(aRisk)}</div><div class="ml">At Risk</div></div><div class="m"><div class="mv" style="color:#185FA5">${soon.length}</div><div class="ml">Renewals &lt;90d</div></div><div class="m"><div class="mv" style="color:#A32D2D">${ESCALATIONS.filter(e=>e.status!=='Resolved').length}</div><div class="ml">Escalations</div></div><div class="m"><div class="mv" style="color:#0F6E56">${fmt(farmP)}</div><div class="ml">Farm Pipeline</div></div></div>
+  <div class="h">Renewals — next 90 days</div><table><tr><th>Account</th><th>Region</th><th>CSM</th><th>ARR</th><th>Renewal</th><th>Status</th></tr>${soon.map(a=>`<tr><td><b>${a.name}</b></td><td>${a.region}</td><td>${a.csm}</td><td>${fmt(a.arr)}</td><td>${fmtD(a.renewal)}</td><td>${a.renewalStatus||'On Track'}</td></tr>`).join('')}</table>
+  <div class="h">Active escalations</div><table><tr><th>Account</th><th>Type</th><th>Level</th><th>Owner</th><th>Status</th></tr>${ESCALATIONS.filter(e=>e.status!=='Resolved').map(e=>`<tr><td><b>${e.account}</b></td><td>${e.type}</td><td>${e.level}</td><td>${e.owner}</td><td>${e.status}</td></tr>`).join('')}</table>
+  <div class="h">Farming pipeline</div><table><tr><th>Account</th><th>CSM</th><th>Types</th><th>Deal Value</th><th>Quarter</th></tr>${ACCOUNTS.filter(a=>a.farming&&a.farming.types&&a.farming.types.length>0).map(a=>`<tr><td><b>${a.name}</b></td><td>${a.csm}</td><td>${a.farming.types.join(', ')}</td><td>${fmt(a.farming.dealValue)}</td><td>${a.farming.quarter||'—'}</td></tr>`).join('')}</table>
+  </body></html>`);
+  w.document.close();setTimeout(()=>w.print(),600);
+}
+
+function openModal(){document.getElementById('modal-overlay').classList.add('open');}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
+document.getElementById('modal-overlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
+
+init();
+</script>
+</body>
+</html>
